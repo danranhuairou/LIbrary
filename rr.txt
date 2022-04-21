@@ -1,0 +1,1621 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define BACKSPACE 127
+
+//用户类型结构体
+typedef struct usr
+{
+    char user_name[20];
+    char user_passw[10];
+    char jus[10];
+    struct usr *next;
+} User;
+//读者类型结构体
+typedef struct red
+{
+    char user_name[20];
+    char reader_name[20];
+    char unit[30];
+    char phone[20];
+    char jus[10];
+    int loanable;
+    int borrowed;
+    struct red *next;
+}Reader;
+//图书类型结构体
+typedef struct bok
+{
+    char book_number[20];
+    char book_name[30];
+    char book_author[20];
+    char book_press[30];
+    int collection;
+    int lending;
+    int pointer1;
+    int pointer2;
+    int pointer3;
+}Book;
+//书名索引
+typedef struct bok_name
+{
+    char book_name[30];
+    int pointer;
+    int len;
+}Book_name;
+//作者索引
+typedef struct bok_author
+{
+    char book_author[30];
+    int pointer;
+    int len;
+}Book_author;
+//出版社索引
+typedef struct bok_press
+{
+    char book_press[30];
+    int pointer;
+    int len;
+}Book_press;
+
+//函数声明
+void login_ui();//打印登录ui
+void main_ui();//打印主系统ui
+void User_ui();//打印用户ui
+void Reader_ui();//打印读者ui
+void Book_ui();//打印图书ui
+void findbook_ui();//图书查询ui
+
+User *usr_load();//用户文件读取
+void usr_save();//用户文件储存
+Reader *red_load();//读者文件读取
+void red_save();//读者文件存放
+int bok_load(int total,Book *Book_head);//图书文件读取
+void bok_save(int total,Book *Book_head);//图书文件保存
+int bok_name_load(int total1,Book_name *Name_head);//书名索引读取
+void bok_name_save(int total1,Book_name *Name_head);//书名索引保存
+int bok_author_load(int total2,Book_author *Author_head);//作者索引读取
+void bok_author_save(int total2,Book_author *Author_head);//作者索引保存
+int bok_press_load(int total3,Book_press *Press_head);//出版社索引读取
+void bok_press_save(int total3,Book_press *Press_head);//出版社索引保存
+
+void login();//用户登录系统
+int password(User *usp);//密码匹配
+User *find_usr(char *Usr_nam);//用户匹配
+char *student_code(char *pass);//隐藏密码
+
+void mainsystem(User *ma);//主系统
+
+void User_management(User *us1);//用户管理系统
+void User_input(User *un);//用户信息输入
+void User_information_modification(User *un);//用户信息修改
+void User_information_deletion(User *un);//用户信息删除
+void User_information_display(User *un);//用户信息显示
+void User_password_modification(User *un);//用户密码修改
+
+void Reader_management(User *us1);//读者管理系统
+void readerinput();//读者信息输入
+void readermodification();//读者信息修改
+void readerdeletion();//读者信息删除
+void findreader();//读者信息查询
+void readerdisplay();//读者信息显示
+
+void Book_management(User *us1);//图书管理系统
+void Book_input(User *un,Book *Book_head,Book_name *Name_head,Book_author *Author_head,Book_press *Press_head);//图书信息输入
+void Book_modification(User *un,Book *Book_head);//图书信息修改
+void Book_find(Book *Book_head,Book_name *Name_head,Book_author *Author_head,Book_press *Press_head);//图书信息查询
+void numberfind(Book *Book_head);//按书号查询
+void namefind(Book *Book_head,Book_name *Name_head);//按书名查询
+void authorfind(Book *Book_head,Book_author *Author_head);//按作者查询
+void pressfind(Book *Book_head,Book_press *Press_head);//按出版社查询
+void Summary_statistics(Book *Book_head);//汇总统计
+
+//全局变量
+User *User_head;//用户头指针
+Reader *Reader_head;//读者头指针
+
+
+void main(void)                          //主程序
+{
+    User_head = (User *)malloc(sizeof(User));
+    Reader_head=(Reader *)malloc(sizeof(Reader));
+
+    char se = '9';
+    while (se != '0')
+    {
+        User_head->next = usr_load();
+        Reader_head->next=red_load();
+        login_ui();
+        scanf(" %c", &se);
+        getchar();
+        switch (se)
+        {
+        case '1':
+            login();                    //进入登录系统
+            break;
+        case '0':
+            break;
+        default:
+            printf("输入错误，请重试！\n");
+            break;
+        }
+    }
+}
+void mainsystem(User *ma)           //主系统
+{
+    char se='?';
+    while(se!='0')
+    {
+        main_ui();
+        scanf(" %c",&se);
+        switch(se)
+        {
+            case '1':
+            User_management(ma);break;
+            case '2':
+            Reader_management(ma);break;
+            case '3':
+            Book_management(ma);break;
+            case '0':
+            return;
+            default:
+            printf("输入错误，请重试！\n");
+        }
+
+    }
+}
+User *usr_load()                    //用户文件读取
+{
+    FILE *fp;
+    User *h = NULL, *t = NULL, *p = NULL;
+    if ((fp = fopen("usr.txt", "r")) == NULL)
+    {
+        printf("Open usr.txt error!");
+        exit(0);
+    }
+    while (!feof(fp))
+    {
+        p = (User *)malloc(sizeof(User));
+        p->next = NULL;
+        fscanf(fp, "%s", p->user_name);
+        fscanf(fp, "%s", p->user_passw);
+        fscanf(fp, "%s", p->jus);
+        if (h == NULL)
+        {
+            h = p;
+        }
+        else
+        {
+            t->next = p;
+        }
+        t = p;
+    }
+    fclose(fp);
+    return h;
+}
+void usr_save()                     //用户文件保存
+{
+    FILE *fp=fopen("usr.txt","w");
+    if(fp==NULL)
+    {
+        printf("Error!");
+        exit(1);
+    }
+    User *p=User_head->next;
+    while(p!=NULL)
+    {
+        fprintf(fp,"%s ",p->user_name);
+        fprintf(fp,"%s ",p->user_passw);
+        if(p->next==NULL)
+        {
+            fprintf(fp,"%s",p->jus);
+            break;
+        }
+        fprintf(fp,"%s\n",p->jus);
+        p=p->next;
+    }
+    fclose(fp);
+}
+Reader *red_load()                  //读者信息保存
+{
+    FILE *fp;
+    Reader *h=NULL,*p=NULL,*t=NULL;
+    if((fp=fopen("red.txt","r"))==NULL)
+    {
+        printf("Error!\n");
+        exit(1);
+    }
+    while(!feof(fp))
+    {
+        h=(Reader *)malloc(sizeof(Reader));
+        h->next=NULL;
+        fscanf(fp,"%s",h->user_name);
+        fscanf(fp,"%s",h->reader_name);
+        fscanf(fp,"%s",h->unit);
+        fscanf(fp,"%s",h->phone);
+        fscanf(fp,"%d",&h->loanable);
+        fscanf(fp,"%d",&h->borrowed);
+        fscanf(fp,"%s",h->jus);
+        if(p==NULL)
+        {
+            p=h;
+        }
+        else
+        {
+            t->next=h;
+        }
+        t=h;
+    }
+    fclose(fp);
+    return p;
+}
+void red_save()                 //读者文件保存
+{
+    FILE *fp;
+    if((fp=fopen("red.txt","w"))==NULL)
+    {
+        printf("error!\n");
+        exit(1);
+    }
+    Reader *p=Reader_head->next;
+    while(p!=NULL)
+    {
+         
+        fprintf(fp,"%s ",p->user_name);
+        fprintf(fp,"%s ",p->reader_name);
+        fprintf(fp,"%s ",p->unit);
+        fprintf(fp,"%s ",p->phone);
+        fprintf(fp,"%d ",p->loanable);
+        fprintf(fp,"%d ",p->borrowed);
+        if(p->next==NULL)
+        {
+            fprintf(fp,"%s",p->jus);
+            break;
+        }
+        fprintf(fp,"%s\n",p->jus);
+        p=p->next;
+    }
+    fclose(fp);
+}
+int bok_load(int total,Book *Book_head)                     //图书文件读取
+{
+    FILE *fp;
+    if((fp=fopen("bok.txt","r"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    while(!feof(fp))
+    {
+        fscanf(fp,"%s",Book_head[total].book_number);
+        fscanf(fp,"%s",Book_head[total].book_name);
+        fscanf(fp,"%s",Book_head[total].book_author);
+        fscanf(fp,"%s",Book_head[total].book_press);
+        fscanf(fp,"%d",&Book_head[total].collection);
+        fscanf(fp,"%d",&Book_head[total].lending);
+        fscanf(fp,"%d",&Book_head[total].pointer1);
+        fscanf(fp,"%d",&Book_head[total].pointer2);
+        fscanf(fp,"%d",&Book_head[total].pointer3);
+        total++;
+    }
+    total--;
+    fclose(fp);
+    return total;
+}
+void bok_save(int total,Book *Book_head)                     //图书文件保存
+{
+    FILE *fp;
+    if((fp=fopen("bok.txt","w"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    for(int i=0;i<=total;i++)
+    {
+        fprintf(fp,"%s ",Book_head[i].book_number);
+        fprintf(fp,"%s ",Book_head[i].book_name);
+        fprintf(fp,"%s ",Book_head[i].book_author);
+        fprintf(fp,"%s ",Book_head[i].book_press);
+        fprintf(fp,"%d ",Book_head[i].collection);
+        fprintf(fp,"%d ",Book_head[i].lending);
+        fprintf(fp,"%d ",Book_head[i].pointer1);
+        fprintf(fp,"%d ",Book_head[i].pointer2);
+        if(i==total)
+        {
+            fprintf(fp,"%d",Book_head[i].pointer3);
+            break;
+        }
+        fprintf(fp,"%d\n",Book_head[i].pointer3);
+    }
+    fclose(fp);
+}
+int bok_name_load(int total1,Book_name *Name_head)
+{
+    FILE *fp;
+    if((fp=fopen("bok_name.txt","r"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    while(!feof(fp))
+    {
+        fscanf(fp,"%s",Name_head[total1].book_name);
+        fscanf(fp,"%d",&Name_head[total1].pointer);
+        fscanf(fp,"%d",&Name_head[total1].len);
+        total1++;
+    }
+    total1--;
+    fclose(fp);
+    return total1;
+}
+void bok_name_save(int total1,Book_name *Name_head)
+{
+    FILE *fp;
+    if((fp=fopen("bok_name.txt","w"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    for(int i=0;i<=total1;i++)
+    {
+        fprintf(fp,"%s ",Name_head[i].book_name);
+        fprintf(fp,"%d ",Name_head[i].pointer);
+        if(i==total1)
+        {
+            fprintf(fp,"%d",Name_head[i].len);
+            break;
+        }
+        fprintf(fp,"%d\n",Name_head[i].len);
+    }
+    fclose(fp);
+}
+int bok_author_load(int total2,Book_author *Author_head)
+{
+    FILE *fp;
+    if((fp=fopen("bok_author.txt","r"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    while(!feof(fp))
+    {
+        fscanf(fp,"%s",Author_head[total2].book_author);
+        fscanf(fp,"%d",&Author_head[total2].pointer);
+        fscanf(fp,"%d",&Author_head[total2].len);
+        total2++;
+    }
+    total2--;
+    fclose(fp);
+    return total2;
+}
+void bok_author_save(int total2,Book_author *Author_head)
+{
+    FILE *fp;
+    if((fp=fopen("bok_author.txt","w"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    for(int i=0;i<=total2;i++)
+    {
+        fprintf(fp,"%s ",Author_head[i]);
+        fprintf(fp,"%d ",Author_head[i].pointer);
+        if(i==total2)
+        {
+            fprintf(fp,"%d",Author_head[i].len);
+            break;
+        }
+        fprintf(fp,"%d\n",Author_head[i].len);
+    }
+    fclose(fp);
+}
+int bok_press_load(int total3,Book_press *Press_head)
+{
+    FILE *fp;
+    if((fp=fopen("bok_press.txt","r"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    while(!feof(fp))
+    {
+        fscanf(fp,"%s",Press_head[total3].book_press);
+        fscanf(fp,"%d",&Press_head[total3].pointer);
+        fscanf(fp,"%d",&Press_head[total3].len);
+        total3++;
+    }
+    total3--;
+    fclose(fp);
+    return total3;
+}
+void bok_press_save(int total3,Book_press *Press_head)
+{
+    FILE *fp;
+    if((fp=fopen("bok_press.txt","w"))==NULL)
+    {
+        printf("打开失败！\n");
+        exit(1);
+    }
+    for(int i=0;i<=total3;i++)
+    {
+        fprintf(fp,"%s ",Press_head[i].book_press);
+        fprintf(fp,"%d ",Press_head[i].pointer);
+        if(i==total3)
+        {
+            fprintf(fp,"%d",Press_head[i].len);
+            break;
+        }
+        fprintf(fp,"%d\n",Press_head[i].len);
+    }
+    fclose(fp);
+}
+void login()                        //登录系统
+{
+    User *us = NULL;
+    char s = '1';
+    char usr_nam[20];
+    printf("读者号:");
+    gets(usr_nam);
+    us = find_usr(usr_nam);         //找到账号函数
+    if (us == NULL)                             
+    {
+        printf("账号不存在！\n");      
+        return;
+    }
+    printf("密码：");
+    if (password(us) == 0)          //找到账号密码
+    {
+        return;
+    }
+    printf("\n登录成功!\n");
+    mainsystem(us);                 //进入主系统
+}
+
+User *find_usr(char *Usr_nam)               //匹配账号
+{
+    User *usn = User_head;
+    while (usn)
+    {
+        if (strcmp(Usr_nam, usn->user_name) == 0)
+        {
+            break;
+        }
+        usn = usn->next;
+    }
+    return usn;
+}
+int password(User *usp)                     //匹配密码
+{
+    int n = 3;
+    char usr_passw[10000];
+    while (n != 0)
+    {
+        student_code(usr_passw);
+        if (strcmp(usp->user_passw, usr_passw) == 0)
+        {
+            break;
+        }
+        n--;
+        printf("\n你还有 %d 机会。\n", n);
+    }
+    return n;
+}
+char *student_code(char *pass) // linux下模拟getch()
+{
+    int i = 0;
+    system("stty -icanon"); //设置一次性读完操作，即getchar()不用回车也能获取字符
+    system("stty -echo");   //关闭回显，即输入任何字符都不显示
+    while (i < 100000)
+    {
+        pass[i] = getchar(); //获取键盘的值到数组中
+        if (i == 0 && pass[i] == BACKSPACE)
+        {
+            i = 0; //若开始没有值，输入删除，则，不算值
+            pass[i] = '\0';
+            continue;
+        }
+        else if (pass[i] == BACKSPACE)
+        {
+            printf("\b \b"); //若删除，则光标前移，输空格覆盖，再光标前移
+            pass[i] = '\0';
+            i = i - 1; //返回到前一个值继续输入
+            continue;  //结束当前循环
+        }
+        else if (pass[i] == '\n') //若按回车则，输入结束
+        {
+            pass[i] = '\0';
+            break;
+        }
+        else
+        {
+            printf("*");
+        }
+        i++;
+    }
+    system("stty echo");   //开启回显
+    system("stty icanon"); //关闭一次性读完操作，即getchar()必须回车也能获取字符
+    return pass;           //返回最后结果
+}
+
+void Book_management(User *us1)
+{
+    Book Book_head[100];//图书头指针
+    Book_name Name_head[100];//书名索引
+    Book_author Author_head[100];//作者索引
+    Book_press Press_head[100];//出版社索引
+    char se='?';
+    while(se!='0')
+    {
+        Book_ui();
+        scanf(" %c",&se);
+        getchar();
+        switch(se)
+        {
+            case '0':
+            return;
+            case '1':
+            Book_input(us1,Book_head,Name_head,Author_head,Press_head);break;
+            case '2':
+            Book_modification(us1,Book_head);break;
+            case '3':
+            Book_find(Book_head,Name_head,Author_head,Press_head);break;
+            case '4':
+            Summary_statistics(Book_head);break;
+            default:
+            printf("输入格式错误！\n");
+        }
+    }
+}
+void Book_input(User *un,Book *Book_head,Book_name *Name_head,Book_author *Author_head,Book_press *Press_head)
+{
+    int total=0,total1=0,total2=0,total3=0;
+    total=bok_load(total,Book_head);
+    total1=bok_name_load(total1,Name_head);
+    total2=bok_author_load(total2,Author_head);
+    total3=bok_press_load(total3,Press_head);
+    int i;
+    char jus[3]="2";
+    if(strcmp(jus,un->jus)!=0)
+    {
+        printf("你没有该权限！\n");
+        return;
+    }
+    printf("请输入要添加的书号：（长度为四位）");
+    char number[30];
+    while(1)
+    {
+        gets(number);
+        for(i=0;i<=total;i++)
+        {
+            if(strcmp(number,Book_head[i].book_number)==0)
+            {
+                break;
+            }
+        }
+        if(i>total)
+        {
+            if(strlen(number)==4)
+            {
+                break;
+            }
+            printf("格式错误！\n");
+            continue;
+        }
+        printf("书名号已存在！\n");
+    }
+    char name[30];
+    printf("请输入书名：");
+    gets(name);
+    char author[30];
+    printf("请输入作者：");
+    gets(author);
+    char press[30];
+    printf("请输入出版社：");
+    gets(press);
+    int c;
+    printf("请输入藏书数：");
+    scanf("%d",&c);
+    int l;
+    printf("请输入借出数：");
+    scanf("%d",&l);
+    int pointer1=0,pointer2=0,pointer3=0;
+    total++;
+    int flag1=-1;
+    for(i=total1;i>=0;i--)
+    {
+        if(strcmp(name,Name_head[i].book_name)==0)
+        {
+            pointer1=Name_head[i].pointer;
+            Name_head[i].pointer=total+1;
+            Name_head[i].len++;
+            flag1=0;
+            break;
+        }
+    }
+    if(flag1==-1)
+    {
+        total1++;
+        strcpy(Name_head[total1].book_name,name);
+        Name_head[total1].pointer=total+1;
+        Name_head[total1].len=1;
+    }
+    int flag2=-1;
+    for(i=total2;i>=0;i--)
+    {
+        if(strcmp(author,Author_head[i].book_author)==0)
+        {
+            pointer2=Author_head[i].pointer;
+            Author_head[i].pointer=total+1;
+            Author_head[i].len++;
+            flag2=0;
+            break;
+        }
+    }
+    if(flag2==-1)
+    {
+        total2++;
+        strcpy(Author_head[total2].book_author,author);
+        Author_head[total2].pointer=total+1;
+        Author_head[total2].len=1;
+    }
+    int flag3=-1;
+    for(i=total3;i>=0;i--)
+    {
+        if(strcmp(press,Press_head[i].book_press)==0)
+        {
+            pointer3=Press_head[i].pointer;
+            Press_head[i].pointer=total+1;
+            Press_head[i].len++;
+            flag3=0;
+            break;
+        }
+    }
+    if(flag3==-1)
+    {
+        total3++;
+        strcpy(Press_head[total3].book_press,press);
+        Press_head[total3].pointer=total+1;
+        Press_head[total3].len=1;
+    }
+    strcpy(Book_head[total].book_number,number);
+    strcpy(Book_head[total].book_name,name);
+    strcpy(Book_head[total].book_author,author);
+    strcpy(Book_head[total].book_press,press);
+    Book_head[total].collection=c;
+    Book_head[total].lending=l;
+    Book_head[total].pointer1=pointer1;
+    Book_head[total].pointer2=pointer2;
+    Book_head[total].pointer3=pointer3;
+    bok_save(total,Book_head);
+    bok_name_save(total1,Name_head);
+    bok_author_save(total2,Author_head);
+    bok_press_save(total3,Press_head);
+}
+void Book_modification(User *un,Book *Book_head)
+{
+    char jus[3]="2",number[10],s;
+    if(strcmp(jus,un->jus)!=0)
+    {
+        printf("你没有该权限！\n");
+        return;
+    }
+    int total=0,i,flag=0;
+    total=bok_load(total,Book_head);
+    printf("请输入要修改的书号：");
+    gets(number);
+    for(i=0;i<=total;i++)
+    {
+        if(strcmp(Book_head[i].book_number,number)==0)
+        {
+            printf("要修改的内容为：1.藏书量 2.借出数\n");
+            scanf(" %c",&s);
+            getchar();
+            switch(s)
+            {
+                case '1':
+                printf("藏书量修改为：");
+                scanf("%d",&Book_head[i].collection);
+                printf("修改成功！\n");
+                bok_save(total,Book_head);
+                break;
+                case '2':
+                printf("借出量改为：");
+                scanf("%d",&Book_head[i].lending);
+                printf("修改成功！\n");
+                bok_save(total,Book_head);
+                break;
+                default:
+                printf("输入错误！\n");
+            }
+            flag=1;
+        }
+    }
+    if(flag==0)
+    {
+        printf("读者号不存在！\n");
+    }
+}
+void Book_find(Book *Book_head,Book_name *Name_head,Book_author *Author_head,Book_press *Press_head)
+{
+    char se='?';
+    while(se!=0)
+    {
+        findbook_ui();
+        scanf(" %c",&se);
+        getchar();
+        switch(se)
+        {
+            case '0':
+            return;
+            case '1':
+            numberfind(Book_head);break;
+            case '2':
+            namefind(Book_head,Name_head);break;
+            case '3':
+            authorfind(Book_head,Author_head);break;
+            case '4':
+            pressfind(Book_head,Press_head);break;
+            default:
+            printf("输入格式错误！\n");
+        }
+    }
+}
+void numberfind(Book *Book_head)
+{
+    int total=0,flag=0,i;
+    char number[100];
+    total=bok_load(total,Book_head);
+    printf("请输入要查询的书号：\n");
+    gets(number);
+    for(i=0;i<=total;i++)
+    {
+        if(strcmp(Book_head[i].book_number,number)==0)
+        {
+            flag=1;
+            break;
+        }
+    }
+    if(flag==0)
+    {
+        printf("账号不存在!\n");
+        return;
+    }
+    printf("----------------------------------------------\n");
+    printf("书号：%s\n",Book_head[i].book_number);
+    printf("书名：%s\n",Book_head[i].book_name);
+    printf("作者：%s\n",Book_head[i].book_author);
+    printf("出版社：%s\n",Book_head[i].book_press);
+    printf("藏书量：%d\n",Book_head[i].collection);
+    printf("借出数：%d\n",Book_head[i].lending);
+    printf("-----------------------------------------------\n");
+}
+void namefind(Book *Book_head,Book_name *Name_head)
+{
+    int total1=0,total=0,i,flag=0,pointer1;
+    char name[100];
+    total=bok_load(total,Book_head);
+    total1=bok_name_load(total1,Name_head);
+    printf("请输入要查询的书名：");
+    gets(name);
+    for(i=0;i<=total1;i++)
+    {
+        if(strcmp(Name_head[i].book_name,name)==0)
+        {
+            flag=1;
+            break;
+        }
+    }
+    if(flag==0)
+    {
+        printf("图书馆没有此书！\n");
+        return;
+    }
+    pointer1=Name_head[i].pointer-1;
+    printf("----------------------------------------\n");
+    printf("书号  书名  作者  出版社  藏书量  借出数  \n");
+    printf("----------------------------------------\n");
+    for(int l=0;l<Name_head[i].len;l++)
+    {
+        printf("%s  %s  %s  %s  %d  %d\n",Book_head[pointer1].book_number,Book_head[pointer1].book_name,Book_head[pointer1].book_author,Book_head[pointer1].book_press,Book_head[pointer1].collection,Book_head[pointer1].lending);
+        pointer1=Book_head[pointer1].pointer1-1;
+    }
+    printf("-----------------------------------------\n");
+}
+void authorfind(Book *Book_head,Book_author *Author_head)
+{
+    int total2=0,total=0,i,flag=0,pointer2;
+    char author[100];
+    total=bok_load(total,Book_head);
+    total2=bok_author_load(total2,Author_head);
+    printf("请输入要查询的作者：");
+    gets(author);
+    for(i=0;i<=total2;i++)
+    {
+        if(strcmp(Author_head[i].book_author,author)==0)\
+        {
+            flag=1;
+            break;
+        }
+    }
+    if(flag==0)
+    {
+        printf("图书馆没有此书！\n");
+        return;
+    }
+    pointer2=Author_head[i].pointer-1;
+    printf("----------------------------------------\n");
+    printf("书号  书名  作者  出版社  藏书量  借出数  \n");
+    printf("----------------------------------------\n");
+    for(int l=0;l<Author_head[i].len;l++)
+    {
+        printf("%s  %s  %s  %s  %d  %d\n",Book_head[pointer2].book_number,Book_head[pointer2].book_name,Book_head[pointer2].book_author,Book_head[pointer2].book_press,Book_head[pointer2].collection,Book_head[pointer2].lending);
+        pointer2=Book_head[pointer2].pointer2-1;
+    }
+    printf("-----------------------------------------\n");
+}
+void pressfind(Book *Book_head,Book_press *Press_head)
+{
+    int total3=0,total=0,i,flag=0,pointer3;
+    char press[100];
+    total=bok_load(total,Book_head);
+    total3=bok_press_load(total3,Press_head);
+    printf("请输入要查询的出版社：");
+    gets(press);
+    for(i=0;i<=total3;i++)
+    {
+        if(strcmp(Press_head[i].book_press,press)==0)
+        {
+            flag=1;
+            break;
+        }
+    }
+    if(flag==0)
+    {
+        printf("图书馆没有此书！\n");
+        return;
+    }
+    pointer3=Press_head[i].pointer-1;
+    printf("----------------------------------------\n");
+    printf("书号  书名  作者  出版社  藏书量  借出数  \n");
+    printf("----------------------------------------\n");
+    for(int l=0;l<Press_head[i].len;l++)
+    {
+        printf("%s  %s  %s  %s  %d  %d\n",Book_head[pointer3].book_number,Book_head[pointer3].book_name,Book_head[pointer3].book_author,Book_head[pointer3].book_press,Book_head[pointer3].collection,Book_head[pointer3].lending);
+        pointer3=Book_head[pointer3].pointer3-1;
+    }
+    printf("-----------------------------------------\n");
+}
+void Summary_statistics(Book *Book_head)
+{
+    int total=0,flag=0;
+    total=bok_load(total,Book_head);
+    for(int i=1;i<=total;i++)
+    {
+        if(Book_head[i].lending>Book_head[flag].lending)
+        {
+            flag=i;
+        }
+    }
+    printf("-----------------------------\n");
+    printf("图书馆总共有 %d 本图书\n",total+1);
+    printf("最热门图书书号： %s 《 %s 》\n",Book_head[flag].book_number,Book_head[flag].book_name);
+    printf("-----------------------------\n");
+}
+
+void Reader_management(User *us1)               //读者管理系统
+{
+    char jus[3]="2";
+     if(strcmp(jus,us1->jus)!=0)
+     {
+        printf("你没有该权限\n");
+        return;
+     }
+     char s='?';
+     while(s!='0')
+     {
+         Reader_ui();
+         scanf(" %c",&s);
+         getchar();
+         switch(s)
+         {
+             case '1':
+             readerinput();break;
+             case '2':
+             readermodification();break;
+             case '3':
+             readerdeletion();break;
+             case '4':
+             findreader();break;
+             case '5':
+             readerdisplay();break;
+             case '0':return;
+             default:
+             printf("输入错误，请再次输入！\n");
+         }
+     }
+}
+void readerinput()                      //读者信息输入 
+{
+    User *p=NULL;
+    Reader *h=(Reader *)malloc(sizeof(Reader)),*pr=NULL;
+    char user_name[20],readername[20],unit[20],phone[30],jus[10];
+    printf("请输入要添加信息的读者号：");
+    gets(user_name);
+    p=User_head->next;
+    while(p!=NULL)
+    {
+        if(strcmp(p->user_name,user_name)==0)
+        {
+            break;
+        }
+        p=p->next;
+    }
+    if(p==NULL)
+    {
+        printf("读者号不存在！\n");
+        return;
+    }
+    while(pr)
+    {
+        if(strcmp(pr->user_name,user_name)==0)
+        {
+            printf("读者号已存在！\n");
+            return;
+        }
+        pr=pr->next;
+    }
+    strcpy(h->user_name,user_name);
+    printf("请输入读者姓名：");
+    gets(readername);
+    strcpy(h->reader_name,readername);
+    printf("情输入读者的单位：");
+    gets(unit);
+    strcpy(h->unit,unit);
+    while(1)
+    {
+        printf("请输入读者手机号：");
+        gets(phone);
+        if(strlen(phone)==11)
+        {
+            break;
+        }
+        printf("手机号长度错误！\n");
+    }
+    strcpy(h->phone,phone);
+    while(1)
+    {
+        printf("请输入读者身份：1.学生 2.教工\n");
+        gets(jus);
+        if(jus[0]=='1'||jus[0]=='2')
+        {
+            if(strlen(jus)==1)
+            {
+                break;
+            }
+        }
+        printf("输入格式错误！\n");
+    }
+    strcpy(h->jus,jus);
+    pr=Reader_head;
+    while(pr->next!=NULL)
+    {
+        pr=pr->next;
+    }
+    if(h->jus[0]=='2')
+    {
+        h->loanable=10;
+    }
+    else
+    {
+        h->loanable=5;
+    }
+    h->borrowed=0;
+    pr->next=h;
+    h->next=NULL;
+    red_save();
+    printf("输入成功！\n");
+}
+void readermodification()               //读者信息修改
+{
+    Reader *h=Reader_head->next;
+    int s;
+    char user_name[20],se='?',readername[20],unit[20],phone[30],jus[10];
+    printf("请输入要修改信息的读者号：");
+    gets(user_name);
+    while(h)
+    {
+        if(strcmp(h->user_name,user_name)==0)
+        {
+            break;
+        }
+        h=h->next;
+    }
+    if(h==NULL)
+    {
+        printf("读者号不存在！\n");
+        return;
+    }
+    printf("请输入要修改的内容：1.姓名 2.单位 3.电话 4.身份 5.已借书数 0.退出\n");
+    scanf(" %c",&se);
+    getchar();
+    switch(se)
+    {
+        case '1':
+            printf("姓名修改为：");
+            gets(readername);
+            strcpy(h->reader_name,readername);
+            red_save();
+            printf("修改成功！\n");
+            break;
+        case '2':
+            printf("单位修改为：");
+            gets(unit);
+            strcpy(h->unit,unit);
+            red_save();
+            printf("修改成功！\n");
+            break;
+        case '3':
+            printf("电话修改为：");
+            while(1)
+            {
+                gets(phone);
+                if(strlen(phone)==11)
+                {
+                    break;
+                }
+                printf("电话长度错误，请再次输入！\n");
+            }
+            strcpy(h->phone,phone);
+            red_save();
+            printf("修改成功！\n");
+            break;
+        case '4':
+            while(1)
+            {
+                printf("身份修改为：（1.学生 2.教工）\n");
+                gets(jus);
+                if(jus[0]=='1'||jus[0]=='2')
+                {
+                    if(strlen(jus)==1)
+                        break;
+                }
+                printf("输入错误，请再次输入！\n");
+            }
+            strcpy(h->jus,jus);
+            if(h->jus[0]=='1')
+            {
+                h->loanable=5;
+            }
+            else
+            {
+                h->loanable=10;
+            }
+            red_save();
+            printf("修改成功！\n");
+            break;
+        case '5':
+            printf("已借书数修改为：");
+            scanf("%d",&s);
+            if(s>h->loanable)
+            {
+                printf("已借书数过大！\n");
+                return;
+            }   
+            h->borrowed=s;
+            printf("修改成功！\n");
+            red_save();
+            break;
+        case '0':
+            return;
+        default:
+            printf("输入有误！请再次输入。\n");
+    }
+}
+void readerdeletion()                   //读者信息删除
+{
+    Reader *p=Reader_head->next,*pr=NULL;
+    printf("请输入要删除的读者号：");
+    char usr_nam[10];
+    int n=0,flag=0;
+    gets(usr_nam);
+    while(p){
+            if(strcmp(usr_nam,p->user_name)==0)
+            {
+                flag=1;
+                if(n==0)
+                {
+                    Reader_head->next=p->next;
+                    free(p);
+                    break;
+                }
+                else
+                {
+                    if(p->next==NULL)
+                    {
+                        pr->next=NULL;
+                        free(p);
+                        break;
+                    }
+                    pr->next=p->next;
+                    free(p);
+                    break;
+                }
+            }
+            n++;
+            pr=p;
+            p=p->next;
+        }
+        if(flag==1){
+            red_save();
+            printf("修改成功!\n");
+        }
+        if(flag==0)
+        {
+            printf("读者号不存在!\n");
+        }
+}
+void findreader()                       //读者信息查询
+{
+    Reader *h=Reader_head->next;
+    char username[20];
+    printf("请输入要查询信息的读者号：");
+    gets(username);
+    while(h)
+    {
+        if(strcmp(h->user_name,username)==0)
+        {
+            printf("------------------------------------\n");
+            printf("读者号：%s\n",h->user_name);
+            printf("姓名：%s\n",h->reader_name);
+            printf("单位：%s\n",h->unit);
+            printf("电话：%s\n",h->phone);
+            printf("可借书数：%d\n",h->loanable);
+            printf("已借书数：%d\n",h->borrowed);
+            printf("------------------------------------\n");
+            return;
+        }
+        h=h->next;
+    }
+    printf("读者号不存在！\n");
+}
+void readerdisplay()                    //读者信息显示
+{
+    Reader *p=Reader_head,*h=NULL,*t=NULL,*pr=NULL,*tr=NULL;
+    while(p!=NULL)
+    {
+        Reader *pr=(Reader *)malloc(sizeof(Reader));
+        pr->next=NULL;
+        if(h==NULL)
+        {
+            h=pr;
+            t=pr;
+        }
+        else
+        {
+            strcpy(pr->user_name,p->user_name);
+            strcpy(pr->reader_name,p->reader_name);
+            strcpy(pr->unit,p->unit);
+            strcpy(pr->phone,p->phone);
+            pr->loanable=p->loanable;
+            pr->borrowed=p->borrowed;
+            t=h->next;
+            tr=h;
+            while(t!=NULL&&strcmp(t->reader_name,pr->reader_name)<0)
+            {
+                t=t->next;
+                tr=tr->next;
+            }
+            pr->next=t;
+            tr->next=pr;
+        }
+        p=p->next;
+    }
+    h=h->next;
+    printf("------------------------------------------------------------------\n");
+    printf("读者号  姓名  单位       电话        可借书数  已借书数\n");
+    printf("------------------------------------------------------------------\n");
+    while(h){
+        printf("%s\t%s\t%s\t%s\t%d\t%d\n",h->user_name,h->reader_name,h->unit,h->phone,h->loanable,h->borrowed);
+        h=h->next;
+    }
+    printf("-------------------------------------------------------------------\n");
+}
+void User_management(User *us1)             //用户管理系统
+{
+    char se='?';
+    while(se!='0')
+    {
+        User_ui();
+        scanf(" %c",&se);
+        getchar();
+        switch(se)
+        {
+            case '1':
+            User_input(us1);break;
+            case '2':
+            User_information_modification(us1);break; 
+            case '3':
+            User_information_deletion(us1);break;
+            case '4':
+            User_information_display(us1);break;
+            case '5':
+            User_password_modification(us1);break;
+            case '0':
+            return;
+            default:
+            printf("输入有误，请再输入一遍！\n");
+        }
+    }
+}
+
+void User_input(User *un)                               //用户信息输入
+{
+    char jus[3]="1";
+    if(strcmp(un->jus,jus)!=0)
+    {
+        printf("你没有该权限！\n");
+        return;
+    }
+    User *h=User_head->next;
+    User *p=(User *)malloc(sizeof(User));
+    p->next=NULL;
+    while(h->next!=NULL)
+    {
+        h=h->next;
+    }
+    printf("要填加的读者号为：（长度为十位以内）");
+    char user_name[20];
+    while(1)
+    {
+        User *usr=User_head;
+        gets(p->user_name);
+        while(usr){
+            if(strcmp(p->user_name,usr->user_name)==0)
+            {
+                printf("账号已经存在！\n");
+                free(p);
+                return;
+            }
+            usr=usr->next;        
+        }
+            if(strlen(p->user_name)<10&&strlen(p->user_name)>0)
+            {
+                break;
+            }
+            printf("Error!");
+            
+      
+    }
+    printf("注册密码为：（密码长度为六位）");
+    while(1)
+    {
+        gets(p->user_passw);
+        if(strlen(p->user_passw)==6)
+        {
+            break;
+        }
+        printf("输入格式错误！\n");
+    }
+    printf("确定密码为：");
+    char user_passw2[10];
+    int n=0;
+    while(1)
+    {
+        gets(user_passw2);
+        if(strcmp(user_passw2,p->user_passw)==0)
+        {
+            break;
+        }
+        n++;
+        printf("你还有 %d 次机会\n",3-n);
+        if(n==3)
+        {
+            free(p);
+            printf("你没有机会!\n");
+            return;
+        }
+    }
+    printf("读者权限:0.普通用户 1.系统管理员 2.图书管理员\n");
+    while(1)
+    {
+        gets(p->jus);
+        if(p->jus[0]=='1'||p->jus[0]=='2'||p->jus[0]=='0')
+        {
+            if(strlen(p->jus)==1)
+                break;
+        }
+        printf("输入错误!\n");
+    }
+    h->next=p;
+    usr_save();
+    return;
+}
+void User_information_modification(User *un)            //用户信息修改
+{
+    char jus[3]="1";
+    if(strcmp(un->jus,jus)!=0)
+    {
+        printf("你没有该权限！\n");
+        return;
+    }
+    printf("要修改的读者号:");
+    char usr_nam[10];
+    gets(usr_nam);
+    User *p=User_head->next,*pr=User_head->next;
+    while(p){
+        if(strcmp(p->user_name,usr_nam)==0)
+        {
+            printf("修改内容为:\n1.读者号 2.密码 3.权限\n");
+            char a;
+            scanf(" %c",&a);
+            getchar();
+            switch (a)
+            {
+                case '1':
+                printf("读者号修改为:(长度为十位数以内,不能重复)\n");
+                char usr_name[10];
+                while(1){
+                    gets(usr_name);
+                    while(pr){
+                        if(strcmp(usr_name,pr->user_name)==0)
+                        {
+                            printf("读者号重复！\n");
+                            return;
+                        }
+                        pr=pr->next;
+                    }
+                    if((strlen(usr_name)<10&&strlen(usr_name)>0))
+                    {
+                        strcpy(p->user_name,usr_name);
+                        usr_save();
+                        printf("修改成功！\n");
+                        return;
+                    }
+                    printf("输入格式错误！\n");
+                }
+                break;
+                case '2':
+                printf("修改密码为:(密码长度为6位)");
+                char usr_passw[10];
+                while(1){
+                    gets(usr_passw);
+                    if(strlen(usr_passw)==6)
+                    {
+                        break;
+                    }
+                    printf("输入格式错误\n");
+                }
+                printf("确定密码：");
+                char usr_passw2[10];
+                int n=0;
+                while(1){
+                    gets(usr_passw2);
+                    if(strcmp(usr_passw2,usr_passw)==0)
+                    {
+                        break;
+                    }
+                    if(n==2)
+                    {
+                        printf("错误！你没有机会了\n");
+                        return;
+                    }
+                    n++;
+                    printf("输入错误，你还有 %d 次机会!\n",3-n);
+                }
+                strcpy(p->user_passw,usr_passw);
+                usr_save();
+                printf("修改成功!\n");
+                break;
+                case '3':
+                printf("权限修改为:\n(0.普通用户 1.系统管理员 2.图书管理员)\n");
+                char user_jus[3],yn;
+                while(1)
+                {
+                    gets(user_jus);
+                    printf("确定要执行此操作吗?(Y/N):");
+                    scanf(" %c",&yn);
+                    getchar();
+                    if(yn=='y'||yn=='Y')
+                    {
+                        if(user_jus[0]=='1'||user_jus[0]=='2'||user_jus[0]=='0')
+                        {
+                            if(strlen(user_jus)==1)
+                            {
+                                strcpy(p->jus,user_jus);
+                                usr_save();
+                                printf("修改成功！\n");
+                                return;
+                            }
+                            
+                        }
+                        printf("输入格式错误！\n");
+                    }
+                    else if(yn=='N'||yn=='n')
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        printf("格式有误！\n");
+                    }
+                }
+                break;
+                default:
+                printf("格式有误！\n");
+                break;
+            }
+        }
+        p=p->next;
+    }
+    printf("账号不存在！\n");
+}
+void User_information_deletion(User *un)                //用户信息删除
+{
+    char jus[3]="1";
+    if(strcmp(un->jus,jus)!=0)
+    {
+        printf("你没有该权限!\n");
+        return;
+    }
+    User *p=User_head->next,*pr=NULL;
+    printf("要删除的读者号为:");
+    char usr_nam[10];
+    int n=0,flag=0;
+    gets(usr_nam);
+    while(p){
+            if(strcmp(usr_nam,p->user_name)==0)
+            {
+                if(p->jus[0]=='1')
+		        {
+			        printf("你不能删除！\n");
+			        return;
+		        }
+                flag=1;
+                if(n==0)
+                {
+                    User_head->next=p->next;
+                    free(p);
+                    break;
+                }
+                else
+                {
+                    if(p->next==NULL)
+                    {
+                        pr->next=NULL;
+                        free(p);
+                        break;
+                    }
+                    pr->next=p->next;
+                    free(p);
+                    break;
+                }
+            }
+            n++;
+            pr=p;
+            p=p->next;
+        }
+        if(flag==1){
+            usr_save();
+            printf("删除成功!\n");
+        }
+        if(flag==0)
+        {
+            printf("账号不存在!\n");
+        }
+}
+void User_information_display(User *un)                 //用户信息显示
+{
+    char jus[3]="1";
+    if(strcmp(un->jus,jus)!=0)
+    {
+        printf("你没有该权限!\n");
+        return;
+    }
+    User *p=User_head->next;
+    printf("------------------------------------------------------------\n");
+    printf("    读者号     |         密码         |        权限          \n");
+    printf("------------------------------------------------------------\n");
+    while(p){
+        if(strlen(p->user_name)<=5)
+        {
+            printf("  %s\t\t\t%s\t\t\t%s\n",p->user_name,p->user_passw,p->jus);
+        }
+        else{
+        printf("  %s\t\t%s\t\t\t%s\n",p->user_name,p->user_passw,p->jus);
+        }
+        p=p->next;
+    }
+    printf("------------------------------------------------------------\n");
+}
+void User_password_modification(User *un)               //用户密码修改
+{
+    printf("修改密码为:(长度为六位)");
+                char usr_passw[10];
+                while(1){
+                    gets(usr_passw);
+                    if(strlen(usr_passw)==6)
+                    {
+                        break;
+                    }
+                    printf("输入错误，请再次输入！\n");
+                }
+                printf("确定密码：");
+                char usr_passw2[10];
+                int n=0;
+                while(1){
+                    gets(usr_passw2);
+                    if(strcmp(usr_passw2,usr_passw)==0)
+                    {
+                        break;
+                    }
+                    if(n==2)
+                    {
+                        printf("输入错误，你没有机会了！\n");
+                        return;
+                    }
+                    n++;
+                    printf("输入错误，你还有 %d 次机会!\n",3-n);
+                }
+                strcpy(un->user_passw,usr_passw);
+                usr_save();
+                printf("修改成功!\n");
+}
+void login_ui()             //登录ui
+{
+    printf("*******************\n");
+    printf("    1.登录\n");
+    printf("    0.退出\n");
+    printf("*******************\n");
+}
+void main_ui()              //主系统ui  
+{
+    printf("****************************\n");
+    printf("    1.用户管理\n");
+    printf("    2.读者管理\n");
+    printf("    3.图书管理\n");
+    printf("    4.图书流通管理\n");
+    printf("    0.登出\n");
+    printf("****************************\n");
+}
+void User_ui()              //用户管理ui  
+{
+    printf("**************************************\n");
+    printf("    1.用户信息输入\n");
+    printf("    2.用户信息修改\n");
+    printf("    3.用户信息删除\n");
+    printf("    4.用户信息显示\n");
+    printf("    5.用户密码修改\n");
+    printf("    0.返回主菜单\n");
+    printf("**************************************\n");
+}
+void Reader_ui()            //读者管理ui
+{
+    printf("**************************************\n");
+    printf("  1. 读者信息输入\n");
+    printf("  2. 读者信息修改\n");
+    printf("  3. 读者信息删除\n");
+    printf("  4. 读者信息查询\n");
+    printf("  5. 读者信息显示\n");
+    printf("  0. 返回主菜单\n");
+    printf("**************************************\n");
+}
+void Book_ui()              //图书管理ui
+{
+    printf("**************************************\n");
+    printf("  1. 图书信息输入\n");
+    printf("  2. 图书信息修改\n");
+    printf("  3. 图书信息查询\n");
+    printf("  4. 汇总统计\n");
+    printf("  0. 返回主菜单\n");
+    printf("**************************************\n");
+}
+void findbook_ui()          //图书查询ui
+{
+    printf("**************************************\n");
+    printf("  1. 按书号查询\n");
+    printf("  2. 按书名查询\n");
+    printf("  3. 按作者查询\n");
+    printf("  4. 按出版社查询\n");
+    printf("  0. 返回主菜单\n");
+    printf("**************************************\n");
+}
